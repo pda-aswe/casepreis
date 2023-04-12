@@ -50,3 +50,13 @@ class Price:
             "amazon":"AMZN"
         }
         return stockSymbols.get(companyName,None)
+    
+    @staticmethod
+    def getStockName(stockSymbol):
+        stockSymbol = stockSymbol.lower()
+        stockSymbols = {
+            "aapl":"Apple",
+            "msft":"Microsoft",
+            "amzn":"Amazon"
+        }
+        return stockSymbols.get(stockSymbol,None)

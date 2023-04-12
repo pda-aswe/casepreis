@@ -5,6 +5,8 @@ import time
 import messenger
 import price
 import mail
+import watches
+import datetime
 
 if __name__ ==  "__main__":
     #setup mqtt client
@@ -13,28 +15,28 @@ if __name__ ==  "__main__":
         print("No MQTT broker running")
         quit()
 
-    #dict of pice watchData
-    observerData = {
-        "observers":[
-        {
-        "id":0,
-        "maxPrice":23.00,
-        "until":"2023-04-20T22:00:00+02:00",
-        "symbol":"AAPL",
-        "mailNotify":True}
-        ]
-    }
+    #load all stock watches
+    watchStore = watches.Watches()
 
     #get preference mail address
     mqttConnection.requestMailAddress()
 
 
-    print(price.Price.getStockSymbol("apple"))
-    #mail.Mail.send("fabiankuffer@live.de","Testmail",["Zeile 1","Zeile 2"])
-
+    #check stock prices forever
     while True:
-        print(price.Price.currentPrice("req/price",{"symbol":"AAPL"},"price/current"))
-        time.sleep(60)
+        stockData = {}
+        for watch in watchStore.getAllWatches():
+            if watch["symbol"] not in stockData:
+                stockData[watch["symbol"]] = price.Price.currentPrice("req/price",{"symbol":watch["symbol"]},"price/current")
+            
+            if stockData[watch["symbol"]]["current"] < watch["maxPrice"]:
+                ttsMessage = "Für die Aktie "+price.Price.getStockName(watch["symbol"])+" wurde der Wunschpreis erreicht."
+                if watch["mailNotify"] and mqttConnection.getMailAddress():
+                    mail.Mail.send(mqttConnection.getMailAddress(),"Aktienwunschpreis",["Aktiensymbol: "+watch["symbol"],"Aktueller Preis: "+str(round(stockData[watch["symbol"]]["current"],2))+"$","Tageshöchstpreis: "+str(round(stockData[watch["symbol"]]["highestDay"],2))+"$","Niedrigster Tagespreis: "+str(round(stockData[watch["symbol"]]["lowestDay"],2))+"$"])
+                    ttsMessage += " Weitere Informationen habe ich dir per Mail zugesendet."
+                mqttConnection.sendTTS(ttsMessage)
+                watchStore.deleteWatch(watch["id"])
+        time.sleep(30)
 
     #stop mqtt
     mqttConnection.disconnect()
