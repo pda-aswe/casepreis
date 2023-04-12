@@ -1,48 +1,40 @@
 #!/usr/bin/python3
-
-import paho.mqtt.client as mqtt
 import time
-import os
 
-def on_connect(client,userdata,flags, rc):
-    #Hier sollten alle Topics aufgelistet werden, auf welche gehört werden soll
-    #Der integer-Wert im Tuple ist egal, da er nicht von der Methode verwendet wird
-    client.subscribe([("test/Pfad/1",0),("test/Pfad/2",0)])
+#own libraries
+import messenger
+import price
+import mail
 
-#Diese Funktion wird aufgerufen, wenn es für ein Topic kein spezielles Callback gibt
-def on_message(client, userdata, msg):
-    print(msg.topic+" "+str(msg.payload))
+if __name__ ==  "__main__":
+    #setup mqtt client
+    mqttConnection = messenger.Messenger()
+    if not mqttConnection.connect():
+        print("No MQTT broker running")
+        quit()
 
-def specific_callback(client, userdata, msg):
-    print("Specific Topic: "+msg.topic+" "+str(msg.payload))
+    #dict of pice watchData
+    observerData = {
+        "observers":[
+        {
+        "id":0,
+        "maxPrice":23.00,
+        "until":"2023-04-20T22:00:00+02:00",
+        "symbol":"AAPL",
+        "mailNotify":True}
+        ]
+    }
 
-def function2Test():
-    return True
+    #get preference mail address
+    mqttConnection.requestMailAddress()
 
-if __name__ == "__main__": # pragma: no cover
-    #aufbau der MQTT-Verbindung
-    client = mqtt.Client()
-    client.on_connect = on_connect
-    client.on_message = on_message
 
-    #Definition einer Callback-Funktion für ein spezielles Topic
-    client.message_callback_add("test/Pfad/2", specific_callback)
+    print(price.Price.getStockSymbol("apple"))
+    #mail.Mail.send("fabiankuffer@live.de","Testmail",["Zeile 1","Zeile 2"])
 
-    docker_container = os.environ.get('DOCKER_CONTAINER', False)
-    if docker_container:
-        mqtt_address = "broker"
-    else:
-        mqtt_address = "localhost"
-    client.connect(mqtt_address,1883,60)
-    client.loop_start()
-
-    #Hier kann der eigene Code stehen. Loop oder Threads
     while True:
-        time.sleep(5)
-        client.publish("test/Pfad/1", "asdf")
-        time.sleep(5)
-        client.publish("test/Pfad/2", "jklm")
+        print(price.Price.currentPrice("req/price",{"symbol":"AAPL"},"price/current"))
+        time.sleep(60)
 
-    #Sollte am Ende stehen, da damit die MQTT-Verbindung beendet wird
-    client.loop_stop()
-    client.disconnect()
+    #stop mqtt
+    mqttConnection.disconnect()
