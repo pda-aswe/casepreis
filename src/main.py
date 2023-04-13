@@ -1,48 +1,43 @@
 #!/usr/bin/python3
-
-import paho.mqtt.client as mqtt
 import time
-import os
 
-def on_connect(client,userdata,flags, rc):
-    #Hier sollten alle Topics aufgelistet werden, auf welche gehört werden soll
-    #Der integer-Wert im Tuple ist egal, da er nicht von der Methode verwendet wird
-    client.subscribe([("test/Pfad/1",0),("test/Pfad/2",0)])
+#own libraries
+import messenger
+import price
+import mail
+import watches
+import datetime
 
-#Diese Funktion wird aufgerufen, wenn es für ein Topic kein spezielles Callback gibt
-def on_message(client, userdata, msg):
-    print(msg.topic+" "+str(msg.payload))
+if __name__ ==  "__main__":
+    #setup mqtt client
+    mqttConnection = messenger.Messenger()
+    if not mqttConnection.connect():
+        print("No MQTT broker running")
+        quit()
 
-def specific_callback(client, userdata, msg):
-    print("Specific Topic: "+msg.topic+" "+str(msg.payload))
+    #load all stock watches
+    watchStore = watches.Watches()
 
-def function2Test():
-    return True
+    #get preference mail address
+    if not mqttConnection.getMailAddress:
+        mqttConnection.requestMailAddress()
 
-if __name__ == "__main__": # pragma: no cover
-    #aufbau der MQTT-Verbindung
-    client = mqtt.Client()
-    client.on_connect = on_connect
-    client.on_message = on_message
 
-    #Definition einer Callback-Funktion für ein spezielles Topic
-    client.message_callback_add("test/Pfad/2", specific_callback)
-
-    docker_container = os.environ.get('DOCKER_CONTAINER', False)
-    if docker_container:
-        mqtt_address = "broker"
-    else:
-        mqtt_address = "localhost"
-    client.connect(mqtt_address,1883,60)
-    client.loop_start()
-
-    #Hier kann der eigene Code stehen. Loop oder Threads
+    #check stock prices forever
     while True:
-        time.sleep(5)
-        client.publish("test/Pfad/1", "asdf")
-        time.sleep(5)
-        client.publish("test/Pfad/2", "jklm")
+        stockData = {}
+        for watch in watchStore.getAllWatches():
+            if watch["symbol"] not in stockData:
+                stockData[watch["symbol"]] = price.Price.currentPrice("req/price",{"symbol":watch["symbol"]},"price/current")
+            
+            if stockData[watch["symbol"]]["current"] < watch["maxPrice"]:
+                ttsMessage = "Für die Aktie "+price.Price.getStockName(watch["symbol"])+" wurde der Wunschpreis erreicht."
+                if watch["mailNotify"] and mqttConnection.getMailAddress():
+                    mail.Mail.send(mqttConnection.getMailAddress(),"Aktienwunschpreis",["Aktiensymbol: "+watch["symbol"],"Aktueller Preis: "+str(round(stockData[watch["symbol"]]["current"],2))+"$","Tageshöchstpreis: "+str(round(stockData[watch["symbol"]]["highestDay"],2))+"$","Niedrigster Tagespreis: "+str(round(stockData[watch["symbol"]]["lowestDay"],2))+"$"])
+                    ttsMessage += " Weitere Informationen habe ich dir per Mail zugesendet."
+                mqttConnection.sendTTS(ttsMessage)
+                watchStore.deleteWatch(watch["id"])
+        time.sleep(30)
 
-    #Sollte am Ende stehen, da damit die MQTT-Verbindung beendet wird
-    client.loop_stop()
-    client.disconnect()
+    #stop mqtt
+    mqttConnection.disconnect()
