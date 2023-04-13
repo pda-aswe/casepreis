@@ -27,7 +27,12 @@ class Messenger():
     def connect(self):
         if not self.connected:
             try:
-                self.mqttConnection.connect("localhost",1883,60)
+                docker_container = os.environ.get('DOCKER_CONTAINER', False)
+                if docker_container:
+                    mqtt_address = "broker"
+                else:
+                    mqtt_address = "localhost"
+                self.mqttConnection.connect(mqtt_address,1883,60)
             except:
                 return False
             self.mqttConnection.loop_start()
