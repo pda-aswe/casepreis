@@ -25,6 +25,7 @@ if __name__ ==  "__main__":
 
     #check stock prices forever
     while True:
+        time.sleep(30)
         stockData = {}
         for watch in watchStore.getAllWatches():
             if watch["symbol"] not in stockData:
@@ -37,7 +38,6 @@ if __name__ ==  "__main__":
                     ttsMessage += " Weitere Informationen habe ich dir per Mail zugesendet."
                 mqttConnection.sendTTS(ttsMessage)
                 watchStore.deleteWatch(watch["id"])
-        time.sleep(30)
 
     #stop mqtt
     mqttConnection.disconnect()
