@@ -9,7 +9,7 @@ class Watches(metaclass=singelton.SingletonMeta):
 
     def __loadData(self):
         try:
-            with open('src/watches.json') as watchesFile:
+            with open('watches.json') as watchesFile:
                 return json.load(watchesFile).get("observers",[])
         except:
             return []
@@ -24,7 +24,7 @@ class Watches(metaclass=singelton.SingletonMeta):
     def saveWatches(self):
         outputData = {"observers":self.watches}
 
-        with open("src/watches.json", "w") as outfile:
+        with open("watches.json", "w") as outfile:
             json.dump(outputData, outfile)
 
     def addWatch(self,symbol,maxPrice,until,mailNotify):

@@ -97,7 +97,6 @@ class Messenger():
 
                 if amountIdx != -1:
                     watchData["maxPrice"] = sttData["tokens"][amountIdx]["token"]
-                    print(watchData)
                     responseThread = threading.Thread(target=self.mailResponseCheck, args=(watchData,))
                     responseThread.start()
                 else:
