@@ -19,7 +19,7 @@ if __name__ ==  "__main__":
     watchStore = watches.Watches()
 
     #get preference mail address
-    if not mqttConnection.getMailAddress:
+    if not mqttConnection.getMailAddress():
         mqttConnection.requestMailAddress()
 
 
