@@ -2,7 +2,8 @@ import json
 import time
 import datetime
 
-class Watches:
+import singelton
+class Watches(metaclass=singelton.SingletonMeta):
     def __init__(self):
         self.watches = self.__loadData()
 
