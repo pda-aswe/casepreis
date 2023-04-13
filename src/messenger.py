@@ -55,14 +55,53 @@ class Messenger():
         nouns = ["aktie"]
         possibleStocks = ["apple","microsoft","amazon"]
 
+        #check if stt  for this use case
         if intersection(sttData["verbs"],verbs) and intersection(sttData["nouns"],nouns):
             stocks = [value["token"] for value in sttData["tokens"] if value["token"] in possibleStocks]
+            #check if stock available
             if stocks:
-                watchData = {"mailNotify":False,"until":datetime.now() + timedelta(days=7),"maxPrice":130.0}
+                #add stock stymbol to watchData
+                watchData = {"mailNotify":False,"until":datetime.now() + timedelta(days=7)}
                 watchData["symbol"] = price.Price.getStockSymbol(stocks[0])
-                #betrag und datum noch raussuchen
-                responseThread = threading.Thread(target=self.mailResponseCheck, args=(watchData,))
-                responseThread.start()
+                
+                #add amount to watchData and check for Date
+                tmpIdx = -1
+                amountIdx = -1
+                breakFor = 0
+                for val in sttData["tokens"]:
+                    tmpIdx += 1
+                    #check amount
+                    if val["token"] in ["euro","dollar"]:
+                        amountIdx = tmpIdx-1
+                        breakFor += 1
+
+                    #check and set date
+                    if val["token"] == "schauen" and len(sttData["tokens"]) > tmpIdx+2:
+                            if sttData["tokens"][tmpIdx+1]["type"] == "NUM" and sttData["tokens"][tmpIdx+2]["type"] == "NUM":
+                                if sttData["tokens"][tmpIdx+1]["token"][-1] == ".":
+                                    day = int(sttData["tokens"][tmpIdx+1]["token"][:-1])
+                                else:
+                                    day = int(sttData["tokens"][tmpIdx+1]["token"])
+                               
+                                if sttData["tokens"][tmpIdx+1]["token"][-1] == ".":
+                                    month = int(sttData["tokens"][tmpIdx+2]["token"][:-1])
+                                else:
+                                    month = int(sttData["tokens"][tmpIdx+2]["token"])
+
+                                watchData["until"] = watchData["until"].replace(month=month, day=day)
+                                breakFor += 1
+
+                    if breakFor == 2:
+                        break
+
+
+                if amountIdx != -1:
+                    watchData["maxPrice"] = sttData["tokens"][amountIdx]["token"]
+                    print(watchData)
+                    responseThread = threading.Thread(target=self.mailResponseCheck, args=(watchData,))
+                    responseThread.start()
+                else:
+                    self.mqttConnection.publish("tts","Leider habe ich den Wunschpreis nicht verstanden. Bitte Versuche es erneut.")
             else:
                 self.mqttConnection.publish("tts","Leider konnte ich keine Aktie unter diesen Namen finden")
 
