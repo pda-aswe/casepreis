@@ -150,7 +150,7 @@ class Messenger():
                     break
 
         self.watchd.addWatch(watchData["symbol"],watchData["maxPrice"],watchData["until"],watchData["mailNotify"])
-        self.mqttConnection.publish("tts","Ich werde mich um den Aktienpreis für die nächste Zeit informieren und dir mitteilen, wenn der Wunschpreis erreicht wird.")
+        self.mqttConnection.publish("tts","Ich werde mich die nächste Zeit über den Aktienpreis informieren und dir mitteilen, wenn der Wunschpreis erreicht wurde.")
 
 def intersection(lst1, lst2):
     lst3 = [value for value in lst1 if value in lst2]
