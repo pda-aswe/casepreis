@@ -81,17 +81,17 @@ class Messenger():
                         breakFor += 1
 
                     #check and set date
-                    if val["token"] == "schauen" and len(sttData["tokens"]) > tmpIdx+2:
-                            if sttData["tokens"][tmpIdx+1]["type"] == "NUM" and sttData["tokens"][tmpIdx+2]["type"] == "NUM":
-                                if sttData["tokens"][tmpIdx+1]["token"][-1] == ".":
-                                    day = int(sttData["tokens"][tmpIdx+1]["token"][:-1])
+                    if val["token"] == "schauen" and len(sttData["tokens"]) > tmpIdx+4:
+                            if sttData["tokens"][tmpIdx+3]["type"] == "NUM" and sttData["tokens"][tmpIdx+4]["type"] == "NUM":
+                                if sttData["tokens"][tmpIdx+3]["token"][-1] == ".":
+                                    day = int(sttData["tokens"][tmpIdx+3]["token"][:-1])
                                 else:
-                                    day = int(sttData["tokens"][tmpIdx+1]["token"])
+                                    day = int(sttData["tokens"][tmpIdx+3]["token"])
                                
-                                if sttData["tokens"][tmpIdx+1]["token"][-1] == ".":
-                                    month = int(sttData["tokens"][tmpIdx+2]["token"][:-1])
+                                if sttData["tokens"][tmpIdx+4]["token"][-1] == ".":
+                                    month = int(sttData["tokens"][tmpIdx+4]["token"][:-1])
                                 else:
-                                    month = int(sttData["tokens"][tmpIdx+2]["token"])
+                                    month = int(sttData["tokens"][tmpIdx+4]["token"])
 
                                 watchData["until"] = watchData["until"].replace(month=month, day=day)
                                 breakFor += 1
@@ -150,7 +150,7 @@ class Messenger():
                     break
 
         self.watchd.addWatch(watchData["symbol"],watchData["maxPrice"],watchData["until"],watchData["mailNotify"])
-        self.mqttConnection.publish("tts","Ich werde mich die nächste Zeit über den Aktienpreis informieren und dir mitteilen, wenn der Wunschpreis erreicht wurde.")
+        self.mqttConnection.publish("tts","Ich werde mich in der nächsten Zeit über den Aktienpreis informieren und dir mitteilen, wenn der Wunschpreis erreicht wurde.")
 
 def intersection(lst1, lst2):
     lst3 = [value for value in lst1 if value in lst2]
